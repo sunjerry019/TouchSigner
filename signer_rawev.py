@@ -16,12 +16,29 @@ import struct
 import time
 import threading
 
+import evdev
+
+# Get the touchpad device
+dev = ""
+
+devices = [evdev.InputDevice(path) for path in evdev.list_devices()]
+for device in devices:
+    if "touchpad" in device.name.lower():
+        dev = device
+        # device.path, device.name, device.phys
+
+if type(dev) == type(""):
+    raise RuntimeError("No touchpad devices found")
+
+print("Selected {} {} {}".format(dev.path, dev.name, dev.phys))
+
 # OPTIONS TO CHANGE
 line_thickness = 6
 antialiasing = False
 window_size = (640, 480)
 resize_on_save = False
-events_location = "/dev/input/by-path/platform-i8042-serio-1-event-mouse"
+events_location = dev.path
+# events_location = "/dev/input/by-path/platform-i8042-serio-1-event-mouse"
 ww = 4500
 hh = 3500
 
@@ -77,10 +94,12 @@ def listener():
                     reinit_vars()
                     stage = 1
                 timeout = time.time() + 0.2
-            if code == 53:
-                x = value - 1210
-            if code == 54:
-                y = value - 1250
+            if code == evdev.ecodes.ABS_MT_POSITION_X:
+                # x = value - 1210
+                x = value
+            if code == evdev.ecodes.ABS_MT_POSITION_Y:
+                # y = value - 1250
+                y = value
                 points.append([x,y])
         event = in_file.read(EVENT_SIZE)
     in_file.close()
